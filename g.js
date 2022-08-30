@@ -1,6 +1,3 @@
-const express = require('express');
-const createError = require('http-errors');
-const logger = require('morgan');
 const dotenv = require('dotenv');
 dotenv.config();
 const accountSid = process.env.TWILIO_BELL_ROAD_SID;
@@ -10,27 +7,41 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const CREDENTIALS = require('./sheets.json');
 const RESPONSES_SHEET_ID = '1gza3a05wWV4bt7c9pMyJsm43hpbCpPx84Uctym2zjOg';
 const doc = new GoogleSpreadsheet(RESPONSES_SHEET_ID);
-var app = express();
-app.use(function (err, req, res, next) {
-
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-    res.status(err.status || 500);
-    res.render('error');
-});
-const PORT = 3005;
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({
-    extended: false
-}));
 let num
-function getIndex(ab){
-    return (ab / 2) + 1
+let c = [
+    { friendlyName: 'Aaron', rowNum: 3 },
+    { friendlyName: 'Alex', rowNum: 4 },
+    { friendlyName: 'Barry', rowNum: 5 },
+    { friendlyName: 'Billy', rowNum: 6 },
+    { friendlyName: 'Bob', rowNum: 7 },
+    { friendlyName: 'Bryan', rowNum: 8 },
+    { friendlyName: 'Jeremy', rowNum: 9 },
+    { friendlyName: 'Marco', rowNum: 10 },
+    { friendlyName: 'Tim', rowNum: 11 },
+    { friendlyName: 'Tony', rowNum: 12 },
+    { friendlyName: 'Adile', rowNum: 13 },
+    { friendlyName: 'Antonio', rowNum: 14 },
+    { friendlyName: 'Diego', rowNum: 15 },
+    { friendlyName: 'Eric', rowNum: 16 },
+    { friendlyName: 'Gaud', rowNum: 17 },
+    { friendlyName: 'Joon', rowNum: 18 },
+    { friendlyName: 'Martin', rowNum: 19 },
+    { friendlyName: 'Muhannad', rowNum: 20 },
+    { friendlyName: 'Patrick', rowNum: 21 },
+    { friendlyName: 'Tami', rowNum: 22 }
+  ]
+  async function getNum(){
+    client.availablePhoneNumbers('US')
+    .local
+    .list({areaCode: 484, limit: 1 })
+    .then(local => local.forEach((l) =>{
+        num = l.phoneNumber
+        console.log(num)
+    }));
 }
-async function run(gnum) {
+
+
+async function dg(){
     await doc.useServiceAccountAuth({
         client_email: CREDENTIALS.client_email,
         private_key: CREDENTIALS.private_key
@@ -40,17 +51,6 @@ async function run(gnum) {
     const sheet = doc.sheetsByTitle['BuyNumbers'];
     console.log(sheet.title);
     await sheet.loadCells('D1:E1');
-    
-     
-    async function getNum(){
-        client.availablePhoneNumbers('US')
-        .local
-        .list({areaCode: 484, limit: 1 })
-        .then(local => local.forEach((l) =>{
-            num = l.phoneNumber
-            console.log(num)
-        }));
-    }
     async function buyNum(fname, rowNum){
         client.incomingPhoneNumbers
         .create({
@@ -67,37 +67,18 @@ async function run(gnum) {
             console.log(incoming_phone_number.phone_number)
         });
     }
-    for (let index = 0; index < gnum.length; index++) {
-        const element = gnum[index];
+    for (let index = 0; index < c.length; index++) {
+        const element = c[index];
         let fname = element.friendlyName;
         let rowNum = element.rowNum;
-        await getNum()
-        try {
+        await getNum().then(async()=>{
             await buyNum(fname,  rowNum)
-        } catch (error) {
-            setTimeout(async() => {
-                await buyNum(fname, rowNum) 
-            }, 6000);
-        }
+        }).catch((err)=>{
+            console.log(err)
+        })
+        
         
     }
-
 }
-
-//run()
-app.post('/twilioNumbers', (req, res) => {
-    
-    let gnum = req.body.nums
-    console.log(gnum)
-    run(gnum)
-    res.send('Backup Started')
-
-})
-
-app.use(function (req, res, next) {
-    next(createError(404));
-});
-
-app.listen(PORT, () => console.log(`backend running on port ${PORT}`))
-
-
+  
+dg()

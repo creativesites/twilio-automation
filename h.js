@@ -1,12 +1,8 @@
-const dotenv = require('dotenv');
-dotenv.config();
-const accountSid = process.env.TWILIO_BELL_ROAD_SID;
-const authToken = process.env.TWILIO_BELL_ROAD_AUTH_TOKEN;
-const client = require('twilio')(accountSid, authToken);
-const jsonfile = require('jsonfile')
-
-const file = './data1.json'
- let obj = []
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const CREDENTIALS = require('./sheets.json');
+const RESPONSES_SHEET_ID = '1gza3a05wWV4bt7c9pMyJsm43hpbCpPx84Uctym2zjOg';
+const doc = new GoogleSpreadsheet(RESPONSES_SHEET_ID);
+const axios = require('axios')
 let data = [
     {
         "friendlyName": "Aaron",
@@ -107,30 +103,52 @@ let data = [
         "rowNum": 22
     }
 ]
-let dt = [
-    {
-        c:'+14844575091',
-        b: 'Patrick'
-    },
-    {
-        c: '+14843764952',
-        b: 'Tami'
-    }
-]
-let hfd = []
-async function hf(){
-    dt.forEach(async(el) => {
-        client.incomingPhoneNumbers
-        .create({
-            phoneNumber: el.c,
-            friendlyName: el.b,
-            addressSid: 'AD741f82422f4f77b513793ed8038bf0e8'
-            })
-        .then((rs)=>{
-            let b = {phoneNumber: rs.phoneNumber}
-            hfd.push(b)
-            console.log(hfd)
-        });
+async function ds(){
+    await doc.useServiceAccountAuth({
+        client_email: CREDENTIALS.client_email,
+        private_key: CREDENTIALS.private_key
+    });
+    
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle['BuyNumbers'];
+    console.log(sheet.title);
+    await sheet.loadCells('D1:E1');
+    
+    
+    data.forEach(async(el) => {
+        setTimeout(() => {
+            
+        }, 3000);
+        let cell = 'D' + el.rowNum
+        const c61 = await sheet.getCellByA1(cell);
+        setTimeout(() => {
+            
+        }, 3000);
+        c61.value = el.phoneNumber
+        await sheet.saveUpdatedCells();
+        console.log('update written to sheet')
     });
 }
-hf()
+//ds()
+let data1 = [ { phoneNumber: '+14844575091' }, { phoneNumber: '+14843764952' } ]
+async function pushData(){
+    var data4 = JSON.stringify(data1);
+    var config = {
+        method: 'post',
+        url: 'https://script.google.com/macros/s/AKfycbw9OYAd3AQd4IBPBjpWovKVbUJwUrnnUSmAZlNNAGwNbaCgMKODo9iFAN_AADMAUZvh/exec?gid=2005867970',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        data: data4
+    };
+
+    axios(config)
+    .then(function (response) {
+    console.log(JSON.stringify(response.data));
+    })
+    .catch(function (error) {
+    console.log(error);
+    });
+}
+
+pushData()
